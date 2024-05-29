@@ -7,6 +7,8 @@ from pathlib import Path
 import zope.interface
 from dacite import from_dict
 from dataclasses_jsonschema import JsonSchemaMixin
+from github import Auth
+from github import Github
 
 import colrev.package_manager.interfaces
 import colrev.package_manager.package_manager
@@ -16,11 +18,8 @@ from colrev.constants import ENTRYTYPES
 from colrev.constants import Fields
 from colrev.constants import SearchSourceHeuristicStatus
 from colrev.constants import SearchType
-
 """pip install PyGithub muss davor geschehen?"""
-from github import Github
 # Authentication is defined via github.Auth
-from github import Auth
 # using an access token
 auth = Auth.Token("access_token")
 
