@@ -7,6 +7,8 @@ from pathlib import Path
 import zope.interface
 from dacite import from_dict
 from dataclasses_jsonschema import JsonSchemaMixin
+from github import Auth
+from github import Github
 
 import colrev.package_manager.interfaces
 import colrev.package_manager.package_manager
@@ -16,11 +18,8 @@ from colrev.constants import ENTRYTYPES
 from colrev.constants import Fields
 from colrev.constants import SearchSourceHeuristicStatus
 from colrev.constants import SearchType
-
 """pip install PyGithub muss davor geschehen?"""
-from github import Github
 # Authentication is defined via github.Auth
-from github import Auth
 # using an access token
 auth = Auth.Token("access_token")
 
@@ -47,7 +46,7 @@ class GitHubSearchSource(JsonSchemaMixin):
     settings_class = colrev.package_manager.package_settings.DefaultSourceSettings
     endpoint = "colrev.github"
     search_types = [SearchType.API] #Nicht ganz sicher, vllt MD? (Siehe open_library.py)
-    
+
 
     def add_endpoint(cls,operation: colrev.ops.search.Search,params: str,) -> None:
         """Add SearchSource as an endpoint (based on query provided to colrev search --add )"""
@@ -59,7 +58,7 @@ class GitHubSearchSource(JsonSchemaMixin):
     )
     '''heuristic_status = SearchSourceHeuristicStatus.experimental'''
     short_name = "GitHubSearch"
-    
+
     def search(self,  rerun: bool) -> None:
 
     def load(self, load_operation: colrev.ops.load.Load) -> dict:
