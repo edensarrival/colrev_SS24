@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import zope.interface
 from dacite import from_dict
 from dataclasses_jsonschema import JsonSchemaMixin
+from github import Auth
+from github import Github
 
 import colrev.package_manager.interfaces
 import colrev.package_manager.package_manager
@@ -16,11 +17,9 @@ from colrev.constants import ENTRYTYPES
 from colrev.constants import Fields
 from colrev.constants import SearchSourceHeuristicStatus
 from colrev.constants import SearchType
-
 """pip install PyGithub muss davor geschehen?"""
-from github import Github
 # Authentication is defined via github.Auth
-from github import Auth
+
 # using an access token
 auth = Auth.Token("access_token")
 
@@ -39,7 +38,7 @@ for repo in g.get_user().get_repos():
 for repo in g.search_repositories("pythoncode tutorials"): oder "suchbegriff" + in:readme && in:name (name = Name des Repos)
     # print repository details
     print_repo(repo)
-    
+
 
 # To close connections after use
 g.close()
@@ -63,22 +62,25 @@ class GitHubSearchSource(JsonSchemaMixin):
     )
     db_url = "https://github.com/"
     _github_md_filename = Path("data/search/md_github.bib")
-    
 
-    def add_endpoint(cls,operation: colrev.ops.search.Search,params: str,) -> None:
+    def add_endpoint(
+        cls,
+        operation: colrev.ops.search.Search,
+        params: str,
+    ) -> None:
         """Add SearchSource as an endpoint (based on query provided to colrev search --add )"""
-        search_source = operation.create_db_source(search_source_cls=cls,params={})
+        search_source = operation.create_db_source(search_source_cls=cls, params={})
         operation.add_source_and_search(search_source)
-    
-    
-    def search(self,  rerun: bool) -> None:
+
+    def search(self, rerun: bool) -> None:
         """Run a search of GitHub"""
 
     def load(self, load_operation: colrev.ops.load.Load) -> dict:
         """Load the records from the SearchSource file"""
-        return 
+        return
 
-    def prepare(self, record: colrev.record.record.Record, source: colrev.settings.SearchSource
+    def prepare(
+        self, record: colrev.record.record.Record, source: colrev.settings.SearchSource
     ) -> colrev.record.record.Record:
         """Source-specific preparation for GitHub"""
 
