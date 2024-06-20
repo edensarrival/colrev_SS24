@@ -283,7 +283,7 @@ class GitHubSearchSource(JsonSchemaMixin):
             records = colrev.loader.load_utils.load(
                 filename=self.search_source.filename,
                 logger=self.review_manager.logger,
-                unique_id_field="URL",
+                unique_id_field="url",
             )
         
             return records
