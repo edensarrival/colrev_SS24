@@ -36,10 +36,10 @@ from github import Auth
 
 # First create a Github instance:
 # Public Web Github
-#g = Github(auth=auth)
+# g = Github(auth=auth)
 # Github Enterprise with custom hostname
-#g = Github(base_url="https://{hostname}/api/v3", auth=auth)
-
+# g = Github(base_url="https://{hostname}/api/v3", auth=auth)
+rerun = False
 """
 # Then play with your Github objects:
 for repo in g.get_user().get_repos():
@@ -65,7 +65,8 @@ class GitHubSearchSource(JsonSchemaMixin):
     search_types = [SearchType.API]
     endpoint = "colrev.github"
     source_identifier = Fields.URL
-   
+    
+
     
     heuristic_status = SearchSourceHeuristicStatus.todo
     short_name = "GitHubSearch"
@@ -74,6 +75,9 @@ class GitHubSearchSource(JsonSchemaMixin):
         + "https://docs.github.com/en/rest?apiVersion=2022-11-28"
     )
     db_url = "https://github.com/"
+    SETTINGS = {
+        "api_key": "packages.search_source.colrev.github.api_key",
+    }
     _github_md_filename = Path("data/search/md_github.bib")
 
     @classmethod
@@ -173,17 +177,19 @@ class GitHubSearchSource(JsonSchemaMixin):
 
         operation.add_source_and_search(search_source)
         return search_source
+    
     ## api key template aus ieee
-    ##def _get_api_key(self) -> str:
-    ##    api_key = self.review_manager.environment_manager.get_settings_by_key(
-    ##        self.SETTINGS["api_key"]
-    ##    )
-    ##    if api_key is None or len(api_key) != 40:
-    ##        api_key = input("Please enter api key: ")
-    ##        self.review_manager.environment_manager.update_registry(
-    ##            self.SETTINGS["api_key"], api_key
-    ##        )
-    ##    return api_key
+    def _get_api_key(self) -> str:
+        api_key = self.review_manager.environment_manager.get_settings_by_key(
+            self.SETTINGS["api_key"]
+        )
+        if api_key is None or len(api_key) != 40:
+            api_key = input("Please enter api access token: ")
+            self.review_manager.environment_manager.update_registry(
+                self.SETTINGS["api_key"], api_key
+            )
+        return api_key
+    
     def search(self, rerun: bool = False) -> None:
         """Run a search on GitHub"""
 
@@ -198,21 +204,9 @@ class GitHubSearchSource(JsonSchemaMixin):
             if not self.search_source.search_parameters:
                 raise ValueError("No search parameters defined for GitHub search source")
 
-            #Auth-Tokenabfrageposition
-            ## api key template aus ieee
-            ##def _get_api_key(self) -> str:
-            ##    api_key = self.review_manager.environment_manager.get_settings_by_key(
-            ##        self.SETTINGS["api_key"]
-            ##    )
-            ##    if api_key is None or len(api_key) != 40:
-            ##        api_key = input("Please enter api key: ")
-            ##        self.review_manager.environment_manager.update_registry(
-            ##            self.SETTINGS["api_key"], api_key
-            ##        )
-            ##    return api_key
-
-            choice_int = choice()
-            #print(choice_int)
+            if rerun == False:
+                choice_int = choice()
+                #print(choice_int)
             query = ""
 
             # Extrahieren der Suchparameter
@@ -232,31 +226,52 @@ class GitHubSearchSource(JsonSchemaMixin):
             #Prints for Tests
         
             #Tokenabfrage muss vor der Instanzbildung abgefragt werden!
-            g = Github()
+            token = self._get_api_key()
+            auth = Auth.Token(token)
+            g = Github(auth=auth)
             
             # Durchführen der Suche auf GitHub
             repositories = g.search_repositories(query=query)
 
             # Speichern der Suchergebnisse in einer Datei
-
             results = []
             for repo in repositories:
+                """
                 repo_data = {
-                    "name": repo.name,
-                    "full_name": repo.full_name,
-                    "description": repo.description,
-                    "html_url": repo.html_url,
-                    "created_at": repo.created_at.isoformat(),
-                    "updated_at": repo.updated_at.isoformat(),
-                    "pushed_at": repo.pushed_at.isoformat(),
-                    "stargazers_count": repo.stargazers_count,
-                    "language": repo.language,
+                   Fields.ENTRYTYPE: "software",
+                   "name": repo.name,
+                   "full_name": repo.full_name,
+                   "description": repo.description,
+                   Fields.URL: repo.html_url,
+                   "created_at": repo.created_at.isoformat(),
+                   "updated_at": repo.updated_at.isoformat(),
+                   "pushed_at": repo.pushed_at.isoformat(),
+                   "stargazers_count": repo.stargazers_count,
+                   "language": repo.language,
                 }
+                repo_data = colrev.record.record.Record(data=repo_data)
+                """
+                try:
+                    repo_data=connector_utils.repo_to_record(repo=repo)
+                    pass
+                except Exception as e:
+                    print("Skipped because there was an Error: ")
+                    pass
                 results.append(repo_data)
+                
 
             # Speichern der Ergebnisse in einer JSON-Datei
-            with open(self._github_md_filename, 'w', encoding='utf-8') as f:
-                json.dump(results, f, ensure_ascii=False, indent=4)
+            #with open(self._github_md_filename, 'w', encoding='utf-8') as f:
+            #    json.dump(results, f, ensure_ascii=False, indent=4)
+
+            # Speichern als Repos in .bib
+            # with open(self._github_md_filename, 'w') as file:
+            #    for repo in results:
+            #        file.write(repo)        #Speichern so nicht möglich, da repo kein string
+
+            for record in results:
+                github_feed.add_update_record(retrieved_record=record)
+            github_feed.save()
 
             # Schließen der GitHub-Verbindung
             g.close()
@@ -283,6 +298,7 @@ def choice() -> int:
     while True:
         user_choice = input("Where do you want to search in (1 = Only in Title, 2 = Only in Readme, 3 = Both): ")
         if user_choice in ['1', '2', '3']:
+            rerun == True
             return int(user_choice)
         else:
             print("Invalid choice. Please try again.")     
